@@ -1,0 +1,95 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace EasyAR
+{
+    public class ARIsEasyBehaviour : MonoBehaviour
+    {
+        private const string title = "Please enter KEY first!";
+        private const string boxtitle = "===PLEASE ENTER YOUR KEY HERE===";
+        private const string keyMessage = ""
+            + "Steps to create the key for this sample:\n"
+            + "  1. login www.easyar.com\n"
+            + "  2. create app with\n"
+            + "      Name: HelloARQRCode (Unity)\n"
+            + "      Bundle ID: cn.easyar.samples.unity.helloarqrcode\n"
+            + "  3. find the created item in the list and show key\n"
+            + "  4. replace all text in TextArea with your key";
+
+        private bool startShowMessage;
+        private bool isShowing;
+        private string textMessage;
+
+        private void Awake()
+        {
+            var EasyARBehaviour = FindObjectOfType<EasyARBehaviour>();
+            if (EasyARBehaviour.Key.Contains(boxtitle))
+            {
+#if UNITY_EDITOR
+                UnityEditor.EditorUtility.DisplayDialog(title, keyMessage, "OK");
+#endif
+                Debug.LogError(title + " " + keyMessage);
+            }
+            EasyARBehaviour.Initialize();
+            foreach (var behaviour in ARBuilder.Instance.ARCameraBehaviours)
+            {
+                behaviour.TargetFound += OnTargetFound;
+                behaviour.TargetLost += OnTargetLost;
+                behaviour.TextMessage += OnTextMessage;
+            }
+            foreach (var behaviour in ARBuilder.Instance.ImageTrackerBehaviours)
+            {
+                behaviour.TargetLoad += OnTargetLoad;
+                behaviour.TargetUnload += OnTargetUnload;
+            }
+        }
+
+        void OnTargetFound(ARCameraBaseBehaviour arcameraBehaviour, TargetAbstractBehaviour targetBehaviour, Target target)
+        {
+            Debug.Log(" Found: " + target.Id);
+        }
+
+        void OnTargetLost(ARCameraBaseBehaviour arcameraBehaviour, TargetAbstractBehaviour targetBehaviour, Target target)
+        {
+            Debug.Log(" Lost: " + target.Id);
+        }
+
+        void OnTargetLoad(ImageTrackerBaseBehaviour trackerBehaviour, ImageTargetBaseBehaviour targetBehaviour, Target target, bool status)
+        {
+            Debug.Log(" Load target (" + status + "): " + target.Id + " (" + target.Name + ") " + " -> " + trackerBehaviour);
+        }
+
+        void OnTargetUnload(ImageTrackerBaseBehaviour trackerBehaviour, ImageTargetBaseBehaviour targetBehaviour, Target target, bool status)
+        {
+            Debug.Log(" Unload target (" + status + "): " + target.Id + " (" + target.Name + ") " + " -> " + trackerBehaviour);
+        }
+
+        private void OnTextMessage(ARCameraBaseBehaviour arcameraBehaviour, string text)
+        {
+            textMessage = text;
+            startShowMessage = true;
+            Debug.Log("got text: " + text);
+        }
+
+        IEnumerator ShowMessage()
+        {
+            isShowing = true;
+            yield return new WaitForSeconds(2f);
+            isShowing = false;
+        }
+
+        private void OnGUI()
+        {
+            if (startShowMessage)
+            {
+                if (!isShowing)
+                    StartCoroutine(ShowMessage());
+                startShowMessage = false;
+            }
+
+            /*if (isShowing)
+                GUI.Box(new Rect(10, Screen.height / 2, Screen.width - 20, 30), textMessage);*/
+        }
+    }
+}
